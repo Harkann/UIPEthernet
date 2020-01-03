@@ -86,9 +86,6 @@ extern "C" {
 #endif
 
 //
-#if defined(ARDUINO_ARCH_AVR)
-#define waitspi() while(!(SPSR&(1<<SPIF)))
-#endif
 
 uint16_t Enc28J60Network::nextPacketPtr;
 uint8_t Enc28J60Network::bank=0xff;
@@ -679,10 +676,10 @@ uint8_t Enc28J60Network::readByte(uint16_t addr)
   #else
     // issue read command
     SPDR = ENC28J60_READ_BUF_MEM;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
     // read data
     SPDR = 0x00;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
     CSPASSIVE;
     return (SPDR);
   #endif  
@@ -714,10 +711,10 @@ void Enc28J60Network::writeByte(uint16_t addr, uint8_t data)
   #else
     // issue write command
     SPDR = ENC28J60_WRITE_BUF_MEM;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
     // write data
     SPDR = data;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
   #endif
   CSPASSIVE;
 }
@@ -837,15 +834,15 @@ Enc28J60Network::readOp(uint8_t op, uint8_t address)
   #else
     // issue read command
     SPDR = op | (address & ADDR_MASK);
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
     // read data
     SPDR = 0x00;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
     // do dummy read if needed (for mac and mii, see datasheet page 29)
     if(address & 0x80)
       {
       SPDR = 0x00;
-      waitspi();
+      while(!(SPSR&(1<<SPIF)));
       }
     // release CS
     CSPASSIVE;
@@ -878,10 +875,10 @@ Enc28J60Network::writeOp(uint8_t op, uint8_t address, uint8_t data)
   #else
     // issue write command
     SPDR = op | (address & ADDR_MASK);
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
     // write data
     SPDR = data;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
   #endif
   CSPASSIVE;
   #if defined(ESP8266)
@@ -906,7 +903,7 @@ Enc28J60Network::readBuffer(uint16_t len, uint8_t* data)
     #endif
   #else
     SPDR = ENC28J60_READ_BUF_MEM;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
   #endif
   while(len)
     {
@@ -921,7 +918,7 @@ Enc28J60Network::readBuffer(uint16_t len, uint8_t* data)
       #endif
     #else
       SPDR = 0x00;
-      waitspi();
+      while(!(SPSR&(1<<SPIF)));
       *data = SPDR;
     #endif    
     data++;
@@ -947,7 +944,7 @@ Enc28J60Network::writeBuffer(uint16_t len, uint8_t* data)
     #endif
   #else
     SPDR = ENC28J60_WRITE_BUF_MEM;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
   #endif
   while(len)
     {
@@ -964,7 +961,7 @@ Enc28J60Network::writeBuffer(uint16_t len, uint8_t* data)
     #else
       SPDR = *data;
       data++;
-      waitspi();
+      while(!(SPSR&(1<<SPIF)));
     #endif
     }
   CSPASSIVE;
@@ -1108,7 +1105,7 @@ Enc28J60Network::chksum(uint16_t sum, memhandle handle, memaddress pos, uint16_t
     #endif
   #else
     SPDR = ENC28J60_READ_BUF_MEM;
-    waitspi();
+    while(!(SPSR&(1<<SPIF)));
   #endif
   uint16_t i;
   for (i = 0; i < len; i+=2)
@@ -1125,10 +1122,10 @@ Enc28J60Network::chksum(uint16_t sum, memhandle handle, memaddress pos, uint16_t
       #endif
     #else
       SPDR = 0x00;
-      waitspi();
+      while(!(SPSR&(1<<SPIF)));
       t = SPDR << 8;
       SPDR = 0x00;
-      waitspi();
+      while(!(SPSR&(1<<SPIF)));
       t += SPDR;
     #endif
     sum += t;
@@ -1148,7 +1145,7 @@ Enc28J60Network::chksum(uint16_t sum, memhandle handle, memaddress pos, uint16_t
       #endif
     #else
       SPDR = 0x00;
-      waitspi();
+      while(!(SPSR&(1<<SPIF)));
       t = (SPDR << 8) + 0;
     #endif    
     sum += t;
